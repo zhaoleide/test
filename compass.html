@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Compass Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        :root {
+            --primary: #0066FF;
+            --primary-dark: #0052CC;
+            --secondary: #00D9FF;
+            --accent: #FF3366;
+            --surface: #FFFFFF;
+            --surface-dark: #F8F9FA;
+            --text: #1A1B23;
+            --text-secondary: #6C7293;
+            --text-light: #8B92A9;
+            --border: rgba(0, 0, 0, 0.08);
+            --shadow: rgba(0, 0, 0, 0.12);
+            --gradient: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--surface);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 动态背景装饰 */
+        .bg-decoration {
+            position: fixed;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--secondary) 0%, transparent 60%);
+            opacity: 0.05;
+            animation: rotate 60s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 头部 */
+        .header {
+            padding: 20px 24px;
+            padding-top: max(20px, env(safe-area-inset-top));
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .app-name {
+            font-size: 28px;
+            font-weight: 600;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .header-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        /* 主容器 */
+        .container {
+            flex: 1;
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 指南针区域 */
+        .compass-section {
+            margin-top: 40px;
+            margin-bottom: 40px;
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .compass-container {
+            position: relative;
+            width: min(100%, 320px);
+            height: min(100vw, 320px);
+            max-width: 320px;
+            max-height: 320px;
+            margin-bottom: 30px;
+        }
+
+        /* 3D指南针效果 */
+        .compass-3d {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .compass-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #F0F3FF 0%, #E6ECFF 100%);
+            box-shadow:
+                20px 20px 60px rgba(0, 102, 255, 0.1),
+                -20px -20px 60px rgba(255, 255, 255, 0.9),
+                inset 0 0 0 2px rgba(0, 102, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 内圈 */
+        .compass-inner {
+            width: 85%;
+            height: 85%;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #FFFFFF 0%, #F8F9FA 100%);
+            box-shadow:
+                inset 5px 5px 15px rgba(0, 0, 0, 0.05),
+                inset -5px -5px 15px rgba(255, 255, 255, 0.9);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        /* 方向标记 */
+        .directions {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .direction {
+            position: absolute;
+            font-weight: 500;
+            font-size: 18px;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .direction.north {
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--accent);
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .direction.south {
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .direction.east {
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .direction.west {
+            left: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* 指针 */
+        .needle {
+            position: absolute;
+            width: 4px;
+            height: 45%;
+            top: 5%;
+            left: 50%;
+            transform-origin: center 90%;
+            transform: translateX(-50%);
+            transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 10;
+        }
+
+        .needle::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(to top, var(--accent), #FF6B6B);
+            clip-path: polygon(50% 100%, 0 0, 100% 0);
+            box-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+        }
+
+        .needle::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            bottom: 0;
+            background: var(--text-secondary);
+            clip-path: polygon(50% 0%, 0 100%, 100% 100%);
+        }
+
+        /* 中心点 */
+        .center-dot {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow:
+                0 0 0 4px var(--surface),
+                0 0 0 6px var(--accent),
+                0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 11;
+        }
+
+        /* 角度显示 */
+        .angle-display {
+            position: absolute;
+            top: 65%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            font-weight: 300;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .angle-display .degree {
+            font-size: 24px;
+            margin-left: 4px;
+            color: var(--text-secondary);
+        }
+
+        /* 度数刻度 */
+        .degree-marks {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .degree-mark {
+            position: absolute;
+            width: 1px;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            top: 10px;
+            left: 50%;
+            transform-origin: center 150px;
+        }
+
+        .degree-mark.major {
+            width: 2px;
+            height: 15px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        /* 信息卡片区域 */
+        .info-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .info-card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient);
+        }
+
+        .info-card.single {
+            grid-column: 1 / -1;
+        }
+
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .card-label {
+            font-size: 13px;
+            color: var(--text-light);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .card-detail {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* 大按钮 */
+        .primary-button {
+            width: 100%;
+            max-width: 400px;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 18px 40px;
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .primary-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .primary-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .primary-button:hover::before {
+            left: 100%;
+        }
+
+        /* 状态指示器 */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: var(--surface-dark);
+            border-radius: 30px;
+            margin-bottom: 40px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--secondary);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 currentColor;
+            }
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 0 6px transparent;
+            }
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* 错误消息 */
+        .error-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(255, 51, 102, 0.3);
+            z-index: 1000;
+            max-width: calc(100vw - 48px);
+            text-align: center;
+            animation: slideDown 0.3s ease;
+        }
+
+        /* 加载动画 */
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -100%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 480px) {
+            .header {
+                padding: 16px 20px;
+            }
+
+            .app-name {
+                font-size: 24px;
+            }
+
+            .container {
+                padding: 0 20px;
+            }
+
+            .compass-container {
+                width: min(100%, 280px);
+                height: min(100vw, 280px);
+                max-width: 280px;
+                max-height: 280px;
+            }
+
+            .direction {
+                font-size: 16px;
+            }
+
+            .direction.north {
+                font-size: 20px;
+            }
+
+            .angle-display {
+                font-size: 40px;
+            }
+
+            .angle-display .degree {
+                font-size: 20px;
+            }
+
+            .card-value {
+                font-size: 20px;
+            }
+
+            .info-grid {
+                gap: 12px;
+            }
+
+            .info-card {
+                padding: 16px;
+            }
+        }
+
+        /* iPhone X 等设备适配 */
+        @supports (padding: max(0px)) {
+            .header {
+                padding-top: max(16px, env(safe-area-inset-top));
+            }
+
+            body {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+
+        /* 暗色模式支持 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --surface: #1A1B23;
+                --surface-dark: #23242D;
+                --text: #FFFFFF;
+                --text-secondary: #A8ABB2;
+                --text-light: #6C7293;
+                --border: rgba(255, 255, 255, 0.08);
+                --shadow: rgba(0, 0, 0, 0.3);
+                --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            }
+
+            .angle-display {
+                background: rgba(26, 27, 35, 0.9);
+                color: var(--text);
+            }
+
+            .compass-ring {
+                background: linear-gradient(145deg, #23242D 0%, #1A1B23 100%);
+                box-shadow:
+                    20px 20px 60px rgba(0, 0, 0, 0.5),
+                    -20px -20px 60px rgba(255, 255, 255, 0.02),
+                    inset 0 0 0 2px rgba(255, 255, 255, 0.05);
+            }
+
+            .compass-inner {
+                background: linear-gradient(145deg, #1A1B23 0%, #0F0F13 100%);
+                box-shadow:
+                    inset 5px 5px 15px rgba(0, 0, 0, 0.5),
+                    inset -5px -5px 15px rgba(255, 255, 255, 0.02);
+            }
+        }
+
+        /* 平板适配 */
+        @media (min-width: 768px) {
+            .container {
+                padding: 0 40px;
+            }
+
+            .info-grid {
+                max-width: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration"></div>
+
+    <div class="error-message" id="errorMessage" style="display: none;"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <h1 class="app-name">Compass</h1>
+            <div class="header-icon">🧭</div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="compass-section">
+            <div class="compass-container">
+                <div class="compass-3d">
+                    <div class="compass-ring">
+                        <div class="compass-inner" id="compass">
+                            <div class="directions">
+                                <div class="direction north">N</div>
+                                <div class="direction east">E</div>
+                                <div class="direction south">S</div>
+                                <div class="direction west">W</div>
+                            </div>
+                            <div class="degree-marks" id="degreeMarks"></div>
+                        </div>
+                        <div class="needle" id="needle"></div>
+                        <div class="center-dot"></div>
+                        <div class="angle-display">
+                            <span id="angleValue">0</span><span class="degree">°</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="status-text" id="statusText">准备就绪</span>
+            </div>
+        </section>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="card-icon">📍</div>
+                <div class="card-label">位置</div>
+                <div class="card-value" id="locationValue">定位中...</div>
+                <div class="card-detail" id="locationDetail">等待GPS信号</div>
+            </div>
+
+            <div class="info-card">
+                <div class="card-icon">⛰️</div>
+                <div class="card-label">海拔</div>
+                <div class="card-value" id="altitudeValue">--</div>
+                <div class="card-detail" id="altitudeDetail">等待数据</div>
+            </div>
+
+            <div class="info-card single">
+                <div class="card-icon">🧭</div>
+                <div class="card-label">方位</div>
+                <div class="card-value" id="bearingValue">北 0°</div>
+                <div class="card-detail" id="bearingDetail">正在校准</div>
+            </div>
+        </div>
+
+        <button class="primary-button" id="permissionBtn" style="display: none;">
+            <span id="btnText">启用指南针</span>
+            <div class="loading-spinner" id="btnSpinner" style="display: none;"></div>
+        </button>
+    </main>
+
+    <script>
+        class ModernCompass {
+            constructor() {
+                // UI Elements
+                this.compass = document.getElementById('compass');
+                this.needle = document.getElementById('needle');
+                this.angleValue = document.getElementById('angleValue');
+                this.locationValue = document.getElementById('locationValue');
+                this.locationDetail = document.getElementById('locationDetail');
+                this.altitudeValue = document.getElementById('altitudeValue');
+                this.altitudeDetail = document.getElementById('altitudeDetail');
+                this.bearingValue = document.getElementById('bearingValue');
+                this.bearingDetail = document.getElementById('bearingDetail');
+                this.statusText = document.getElementById('statusText');
+                this.statusDot = document.getElementById('statusDot');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.permissionBtn = document.getElementById('permissionBtn');
+                this.btnText = document.getElementById('btnText');
+                this.btnSpinner = document.getElementById('btnSpinner');
+                this.degreeMarks = document.getElementById('degreeMarks');
+
+                // State
+                this.currentHeading = 0;
+                this.isSupported = false;
+                this.isCalibrated = false;
+                this.initialCalibrated = false;
+                this.headingOffset = 0;
+
+                // Initialize
+                this.init();
+            }
+
+            init() {
+                // Generate degree marks
+                this.generateDegreeMarks();
+
+                // Check support
+                if (!window.DeviceOrientationEvent) {
+                    this.showError('您的设备不支持指南针功能');
+                    return;
+                }
+
+                // Permission handling
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    this.permissionBtn.style.display = 'block';
+                    this.permissionBtn.addEventListener('click', () => this.requestPermission());
+                } else {
+                    this.startListening();
+                }
+
+                // Get location
+                this.getLocation();
+
+                // Prevent zoom
+                this.preventZoom();
+            }
+
+            generateDegreeMarks() {
+                for (let i = 0; i < 360; i += 30) {
+                    const mark = document.createElement('div');
+                    mark.className = i % 90 === 0 ? 'degree-mark major' : 'degree-mark';
+                    mark.style.transform = `rotate(${i}deg)`;
+                    this.degreeMarks.appendChild(mark);
+                }
+            }
+
+            async requestPermission() {
+                this.btnText.style.display = 'none';
+                this.btnSpinner.style.display = 'block';
+
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') {
+                        this.permissionBtn.style.display = 'none';
+                        this.startListening();
+                        this.updateStatus('传感器已启动', 'active');
+                    } else {
+                        this.showError('需要授权才能使用指南针');
+                        this.resetButton();
+                    }
+                } catch (error) {
+                    console.error('请求权限失败:', error);
+                    this.showError('请求权限失败');
+                    this.resetButton();
+                }
+            }
+
+            resetButton() {
+                this.btnText.style.display = 'block';
+                this.btnSpinner.style.display = 'none';
+            }
+
+            startListening() {
+                window.addEventListener('deviceorientation', (event) => this.handleOrientation(event));
+                this.isSupported = true;
+                this.updateStatus('正在校准...', 'warning');
+            }
+
+            handleOrientation(event) {
+                let heading = event.alpha;
+
+                // iOS设备使用webkitCompassHeading
+                if (event.webkitCompassHeading !== undefined) {
+                    heading = event.webkitCompassHeading;
+                }
+
+                if (heading !== null && !isNaN(heading)) {
+                    // 简化校准逻辑，直接使用设备数据
+                    this.currentHeading = Math.round(heading);
+
+                    // 对于Android设备，alpha值可能需要调整
+                    // 检测是否是Android设备
+                    const isAndroid = /android/i.test(navigator.userAgent);
+                    if (isAndroid && event.alpha !== undefined) {
+                        // Android设备的alpha值通常需要调整
+                        this.currentHeading = (360 - this.currentHeading) % 360;
+                    }
+
+                    this.updateDisplay();
+
+                    // 成功获取数据后，标记为已校准
+                    if (!this.isCalibrated) {
+                        this.isCalibrated = true;
+                        this.updateStatus('正常运行', 'active');
+                        this.bearingDetail.textContent = '校准完成';
+                    }
+                }
+
+                // Calibration check
+                if (event.accuracy === 'compassneedscalibration') {
+                    this.updateStatus('请校准指南针（画8字）', 'warning');
+                    this.bearingDetail.textContent = '需要校准';
+                }
+            }
+
+            updateDisplay() {
+                // Update angle display
+                this.angleValue.textContent = this.currentHeading;
+
+                // Update needle rotation - 修正角度偏差
+                // 确保0度（北）正确指向顶部
+                const adjustedHeading = (this.currentHeading - 90 + 360) % 360;
+                this.needle.style.transform = `translateX(-50%) rotate(${adjustedHeading}deg)`;
+
+                // 保持文字水平，不旋转指南针盘
+                this.compass.style.transform = 'rotate(0deg)';
+
+                // Update bearing
+                const direction = this.getDirection(this.currentHeading);
+                this.bearingValue.textContent = `${direction} ${this.currentHeading}°`;
+                this.bearingDetail.textContent = this.getDirectionDetail(this.currentHeading);
+            }
+
+            getDirection(degrees) {
+                const directions = ['北', '东北', '东', '东南', '南', '西南', '西', '西北'];
+                const index = Math.round(degrees / 45) % 8;
+                return directions[index];
+            }
+
+            getDirectionDetail(degrees) {
+                if (degrees >= 338 || degrees < 22) return '正北方向';
+                if (degrees >= 22 && degrees < 68) return '东北方向';
+                if (degrees >= 68 && degrees < 112) return '正东方向';
+                if (degrees >= 112 && degrees < 158) return '东南方向';
+                if (degrees >= 158 && degrees < 202) return '正南方向';
+                if (degrees >= 202 && degrees < 248) return '西南方向';
+                if (degrees >= 248 && degrees < 292) return '正西方向';
+                return '西北方向';
+            }
+
+            async getLocation() {
+                if ('geolocation' in navigator) {
+                    const options = {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    };
+
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const { latitude, longitude, altitude, accuracy, altitudeAccuracy } = position.coords;
+
+                            // Location
+                            this.locationValue.textContent = '定位成功';
+                            this.locationDetail.textContent =
+                                `${latitude.toFixed(6)}°, ${longitude.toFixed(6)}°`;
+
+                            // Altitude
+                            if (altitude !== null && !isNaN(altitude)) {
+                                const altitudeMeters = Math.round(altitude);
+                                this.altitudeValue.textContent = `${altitudeMeters}m`;
+                                this.altitudeDetail.textContent = altitudeAccuracy ?
+                                    `精度: ±${Math.round(altitudeAccuracy)}m` : 'GPS数据';
+                            } else {
+                                this.getAltitudeFromAPI(latitude, longitude);
+                            }
+                        },
+                        (error) => {
+                            this.locationValue.textContent = '定位失败';
+                            this.locationDetail.textContent = '请检查定位服务';
+                            this.altitudeValue.textContent = '--';
+                            this.altitudeDetail.textContent = '不可用';
+                            this.updateStatus('定位服务不可用', 'error');
+                        },
+                        options
+                    );
+                }
+            }
+
+            async getAltitudeFromAPI(lat, lon) {
+                try {
+                    const response = await fetch(
+                        `https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lon}`
+                    );
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.results && data.results.length > 0) {
+                            const elevation = Math.round(data.results[0].elevation);
+                            this.altitudeValue.textContent = `${elevation}m`;
+                            this.altitudeDetail.textContent = '地图估算';
+                        }
+                    }
+                } catch (error) {
+                    console.log('API获取海拔失败:', error);
+                    this.altitudeValue.textContent = '--';
+                    this.altitudeDetail.textContent = '不可用';
+                }
+            }
+
+            updateStatus(message, type = 'normal') {
+                this.statusText.textContent = message;
+
+                // Update status dot color
+                const colors = {
+                    active: '#00D9FF',
+                    warning: '#FFB800',
+                    error: '#FF3366',
+                    normal: '#6C7293'
+                };
+
+                this.statusDot.style.background = colors[type] || colors.normal;
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.style.display = 'block';
+                this.updateStatus('发生错误', 'error');
+
+                setTimeout(() => {
+                    this.errorMessage.style.display = 'none';
+                }, 5000);
+            }
+
+            preventZoom() {
+                document.addEventListener('gesturestart', (e) => e.preventDefault());
+                document.addEventListener('gesturechange', (e) => e.preventDefault());
+
+                let lastTouchEnd = 0;
+                document.addEventListener('touchend', (e) => {
+                    const now = Date.now();
+                    if (now - lastTouchEnd <= 300) {
+                        e.preventDefault();
+                    }
+                    lastTouchEnd = now;
+                });
+            }
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            new ModernCompass();
+        });
+    </script>
+</body>
+</html>
